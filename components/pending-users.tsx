@@ -72,6 +72,8 @@ export function PendingUsers() {
 
   useEffect(() => {
     fetchUsers()
+    window.addEventListener("user-registered", fetchUsers)
+    return () => window.removeEventListener("user-registered", fetchUsers)
   }, [fetchUsers])
 
   async function handleAssignRole(userId: string) {

@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ArrowLeftIcon, CheckCircle2Icon, GalleryVerticalEndIcon } from "lucide-react"
 import { motion } from "framer-motion"
@@ -41,7 +40,6 @@ const imageReveal = {
 }
 
 export function RegisterForm() {
-	const router = useRouter()
 	const [form, setForm] = useState<FormState>(initialState)
 	const [error, setError] = useState<string | null>(null)
 	const [success, setSuccess] = useState<string | null>(null)
@@ -71,10 +69,34 @@ export function RegisterForm() {
 
 		setIsSubmitting(true)
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 450))
-			setSuccess("Account created successfully. You can now sign in.")
+			const res = await fetch("/api/auth/register", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					name: form.name,
+					email: form.email,
+					password: form.password,
+				}),
+			})
+
+			const data = await res.json()
+
+			if (!res.ok) {
+				setError(data.error || "Registration failed.")
+				return
+			}
+
+			setSuccess("Account created successfully. Redirecting...")
 			setForm(initialState)
-			router.push("/dashboard")
+			// Notify admin panel
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new Event("user-registered"))
+			}
+			// Auto-login sets cookie, redirect to the appropriate page
+			// PENDING users go to /pending
+			window.location.href = "/pending"
+		} catch {
+			setError("Something went wrong. Please try again.")
 		} finally {
 			setIsSubmitting(false)
 		}
