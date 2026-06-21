@@ -2,6 +2,56 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireRole("ADMIN", "DOCTOR", "ASSISTANT");
+
+    const { id } = await params;
+
+    const alert = await prisma.alert.findUnique({
+      where: { id },
+      include: {
+        incubator: {
+          select: {
+            code: true,
+            ward: true,
+            status: true,
+            temperature: true,
+            humidity: true,
+            oxygenLevel: true,
+          },
+        },
+      },
+    });
+
+    if (!alert) {
+      return NextResponse.json({ error: "Alert not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      id: alert.id,
+      message: alert.message,
+      type: alert.type,
+      priority: alert.priority,
+      resolved: alert.resolved,
+      createdAt: alert.createdAt.toISOString(),
+      incubator: alert.incubator,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    console.error("Alert detail error:", error);
+    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { BabyIcon, CpuIcon, MapPinIcon, CalendarIcon } from "lucide-react"
 import {
   Card,
@@ -19,6 +20,9 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+
+const PAGE_SIZE = 8
 
 interface Admission {
   id: string
@@ -29,8 +33,13 @@ interface Admission {
 }
 
 export function ActiveAdmissions() {
+  const router = useRouter()
   const [admissions, setAdmissions] = React.useState<Admission[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [page, setPage] = React.useState(0)
+
+  const totalPages = Math.max(1, Math.ceil(admissions.length / PAGE_SIZE))
+  const paged = admissions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   const fetchAdmissions = React.useCallback(async () => {
     try {
@@ -55,6 +64,8 @@ export function ActiveAdmissions() {
       window.removeEventListener("alert-resolved", fetchAdmissions)
     }
   }, [fetchAdmissions])
+
+  React.useEffect(() => { setPage(0) }, [admissions.length])
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -96,8 +107,12 @@ export function ActiveAdmissions() {
                 </TableCell>
               </TableRow>
             ) : (
-              admissions.map((row) => (
-                <TableRow key={row.id} className="hover:bg-muted/30">
+              paged.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={() => router.push(`/dashboard/patients/${row.id}`)}
+                >
                   <TableCell className="font-medium flex items-center gap-2 py-3">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <BabyIcon className="size-4" />
@@ -127,6 +142,33 @@ export function ActiveAdmissions() {
             )}
           </TableBody>
         </Table>
+        )}
+
+        {/* Pagination */}
+        {admissions.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-4">
+            <p className="text-xs text-muted-foreground">
+              Showing {(page * PAGE_SIZE) + 1}–{Math.min((page + 1) * PAGE_SIZE, admissions.length)} of {admissions.length}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

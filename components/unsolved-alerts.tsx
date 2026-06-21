@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { AlertTriangleIcon, ActivityIcon, ClockIcon, ThermometerIcon, ZapIcon, HeartIcon, CheckCircleIcon } from "lucide-react"
 import {
   Card,
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
+const PAGE_SIZE = 8
+
 interface Alert {
   id: string
   message: string
@@ -32,9 +35,14 @@ interface Alert {
 }
 
 export function UnsolvedAlerts() {
+  const router = useRouter()
   const [alerts, setAlerts] = React.useState<Alert[]>([])
   const [loading, setLoading] = React.useState(true)
   const [resolving, setResolving] = React.useState<string | null>(null)
+  const [page, setPage] = React.useState(0)
+
+  const totalPages = Math.max(1, Math.ceil(alerts.length / PAGE_SIZE))
+  const paged = alerts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   React.useEffect(() => {
     async function fetchAlerts() {
@@ -52,6 +60,8 @@ export function UnsolvedAlerts() {
     }
     fetchAlerts()
   }, [])
+
+  React.useEffect(() => { setPage(0) }, [alerts.length])
 
   async function handleResolve(alertId: string) {
     setResolving(alertId)
@@ -169,9 +179,12 @@ export function UnsolvedAlerts() {
                 </TableCell>
               </TableRow>
             ) : (
-              alerts.map((row) => (
+              paged.map((row) => (
                 <TableRow key={row.id} className="hover:bg-muted/30">
-                  <TableCell className="font-medium py-3 text-sm text-foreground max-w-[280px] truncate">
+                  <TableCell
+                    className="font-medium py-3 text-sm text-foreground max-w-[280px] truncate cursor-pointer hover:text-primary"
+                    onClick={() => router.push(`/dashboard/alerts/${row.id}`)}
+                  >
                     {row.message}
                   </TableCell>
                   <TableCell className="py-3">
@@ -206,6 +219,33 @@ export function UnsolvedAlerts() {
             )}
           </TableBody>
         </Table>
+        )}
+
+        {/* Pagination */}
+        {alerts.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-4">
+            <p className="text-xs text-muted-foreground">
+              Showing {(page * PAGE_SIZE) + 1}–{Math.min((page + 1) * PAGE_SIZE, alerts.length)} of {alerts.length}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
