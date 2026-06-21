@@ -213,7 +213,7 @@ async function main() {
     "Lewis", "Lee", "Walker", "Hall", "Allen",
     "Popescu", "Ionescu", "Dumitrescu", "Stanciu", "Munteanu",
   ];
-  const genders = ["Male", "Female"] as const;
+  const genders = ["Male", "Female"];
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
   const patients: { id: string; firstName: string; lastName: string }[] = [];
