@@ -46,12 +46,13 @@ export function LoginForm({
 
       // Redirect based on role
       const role = data.user?.role
+      router.refresh()
       if (role === "MOTHER") {
-        router.push("/mother")
+        window.location.href = "/mother"
       } else if (role === "PENDING") {
-        router.push("/pending")
+        window.location.href = "/pending"
       } else {
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       }
     } catch {
       setError("Something went wrong. Please try again.")
