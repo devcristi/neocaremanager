@@ -76,16 +76,12 @@ export function generateKey(): string {
  * Decrypts PII fields on a patient object (used in API routes before returning to frontend).
  * Leaves medical data (birthWeight, bloodType, gender, etc.) in plaintext.
  */
-export function decryptPatient(patient: {
-  firstName: string;
-  lastName: string;
-  [key: string]: unknown;
-}) {
+export function decryptPatient<T extends { firstName: string; lastName: string }>(patient: T) {
   return {
     ...patient,
     firstName: decrypt(patient.firstName),
     lastName: decrypt(patient.lastName),
-  };
+  } as T & { firstName: string; lastName: string };
 }
 
 /**

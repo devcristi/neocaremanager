@@ -95,24 +95,24 @@ export async function GET(
       }) => {
         const decrypted = decryptPatient(p);
         return {
-          id: decrypted.id,
+          id: p.id,
           firstName: decrypted.firstName,
           lastName: decrypted.lastName,
-          birthDate: decrypted.birthDate,
-          gender: decrypted.gender,
-          bloodType: decrypted.bloodType,
-        birthWeight: decrypted.birthWeight,
-          mother: decrypted.mother
+          birthDate: p.birthDate,
+          gender: p.gender,
+          bloodType: p.bloodType,
+          birthWeight: p.birthWeight,
+          mother: p.mother
             ? {
-                name: decrypted.mother.user.name,
-                email: decrypted.mother.user.email,
+                name: p.mother.user.name,
+                email: p.mother.user.email,
               }
             : null,
-          admission: decrypted.admissions[0]
+          admission: p.admissions[0]
             ? {
-                admittedAt: decrypted.admissions[0].admittedAt,
-                notes: decrypted.admissions[0].notes,
-                incubator: decrypted.admissions[0].incubator,
+                admittedAt: p.admissions[0].admittedAt,
+                notes: p.admissions[0].notes,
+                incubator: p.admissions[0].incubator,
               }
             : null,
         };
