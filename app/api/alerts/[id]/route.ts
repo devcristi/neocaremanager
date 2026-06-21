@@ -11,7 +11,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { resolved } = body;
+    const { resolved, freeIncubator } = body;
 
     if (typeof resolved !== "boolean") {
       return NextResponse.json(
@@ -20,10 +20,19 @@ export async function PATCH(
       );
     }
 
+    // Resolve the alert
     const alert = await prisma.alert.update({
       where: { id },
       data: { resolved },
     });
+
+    // If freeing the incubator was requested, mark it as AVAILABLE
+    if (resolved && freeIncubator) {
+      await prisma.incubator.update({
+        where: { id: alert.incubatorId },
+        data: { status: "AVAILABLE" },
+      });
+    }
 
     return NextResponse.json({
       success: true,

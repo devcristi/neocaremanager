@@ -32,22 +32,29 @@ export function ActiveAdmissions() {
   const [admissions, setAdmissions] = React.useState<Admission[]>([])
   const [loading, setLoading] = React.useState(true)
 
-  React.useEffect(() => {
-    async function fetchAdmissions() {
-      try {
-        const res = await fetch("/api/stats/active-admissions")
-        if (res.ok) {
-          const data = await res.json()
-          setAdmissions(data)
-        }
-      } catch (err) {
-        console.error("Failed to fetch active admissions:", err)
-      } finally {
-        setLoading(false)
+  const fetchAdmissions = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/stats/active-admissions")
+      if (res.ok) {
+        const data = await res.json()
+        setAdmissions(data)
       }
+    } catch (err) {
+      console.error("Failed to fetch active admissions:", err)
+    } finally {
+      setLoading(false)
     }
-    fetchAdmissions()
   }, [])
+
+  React.useEffect(() => {
+    fetchAdmissions()
+    window.addEventListener("patient-admitted", fetchAdmissions)
+    window.addEventListener("alert-resolved", fetchAdmissions)
+    return () => {
+      window.removeEventListener("patient-admitted", fetchAdmissions)
+      window.removeEventListener("alert-resolved", fetchAdmissions)
+    }
+  }, [fetchAdmissions])
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

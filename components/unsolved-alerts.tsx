@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangleIcon, ActivityIcon, ClockIcon, ThermometerIcon, ZapIcon, HeartIcon } from "lucide-react"
+import { AlertTriangleIcon, ActivityIcon, ClockIcon, ThermometerIcon, ZapIcon, HeartIcon, CheckCircleIcon } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 interface Alert {
   id: string
@@ -32,6 +34,7 @@ interface Alert {
 export function UnsolvedAlerts() {
   const [alerts, setAlerts] = React.useState<Alert[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [resolving, setResolving] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     async function fetchAlerts() {
@@ -49,6 +52,29 @@ export function UnsolvedAlerts() {
     }
     fetchAlerts()
   }, [])
+
+  async function handleResolve(alertId: string) {
+    setResolving(alertId)
+    try {
+      const res = await fetch(`/api/alerts/${alertId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resolved: true, freeIncubator: true }),
+      })
+      if (res.ok) {
+        setAlerts((prev) => prev.filter((a) => a.id !== alertId))
+        window.dispatchEvent(new Event("alert-resolved"))
+        toast.success("Alert resolved & incubator freed.")
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Failed to resolve alert.")
+      }
+    } catch {
+      toast.error("Something went wrong.")
+    } finally {
+      setResolving(null)
+    }
+  }
 
   const getTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -132,12 +158,13 @@ export function UnsolvedAlerts() {
               <TableHead>Type</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead className="text-right">Time</TableHead>
+              <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {alerts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                   All alerts resolved. Excellent work!
                 </TableCell>
               </TableRow>
@@ -161,6 +188,18 @@ export function UnsolvedAlerts() {
                       <ClockIcon className="size-3.5" />
                       <span>{formatTime(row.time)}</span>
                     </div>
+                  </TableCell>
+                  <TableCell className="py-3 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResolve(row.id)}
+                      disabled={resolving === row.id}
+                      className="gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    >
+                      <CheckCircleIcon className="size-4" />
+                      {resolving === row.id ? "..." : "Resolve"}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

@@ -151,7 +151,27 @@ export function AddPatientDrawer() {
         return
       }
 
-      // 2. If an alert preset is selected (not "healthy") and an incubator is chosen, create the alert
+      const patientId = data.patient?.id
+
+      // 2. If an incubator is selected, admit the patient
+      if (incubatorId && patientId) {
+        const admitRes = await fetch("/api/admissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patientId,
+            incubatorId,
+            notes: `Admitted via registration`,
+          }),
+        })
+
+        if (!admitRes.ok) {
+          const admitData = await admitRes.json()
+          console.warn("Admission failed:", admitData.error)
+        }
+      }
+
+      // 3. If an alert preset is selected (not "healthy") and an incubator is chosen, create the alert
       const preset = ALERT_PRESETS.find((p) => p.value === alertPreset)
       if (preset && preset.value !== "healthy" && incubatorId) {
         await fetch("/api/alerts", {
@@ -168,6 +188,9 @@ export function AddPatientDrawer() {
 
       setSuccess(`Patient ${data.patient.firstName} ${data.patient.lastName} created successfully!`)
       resetForm()
+
+      // Notify ActiveAdmissions to refresh
+      window.dispatchEvent(new Event("patient-admitted"))
 
       setTimeout(() => {
         setOpen(false)
